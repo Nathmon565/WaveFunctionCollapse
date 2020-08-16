@@ -157,12 +157,13 @@ MonoBehaviour:
   - {fileID: 920396984887397885, guid: 4c27e1147d201c2489237c40d79fc105, type: 3}
   - {fileID: 7313711385804401318, guid: 27bd63132671b08419535331dd11eaa3, type: 3}
   - {fileID: 1733085293591675802, guid: 5efd4dc15e7889045b9c880b6e480f39, type: 3}
-  defaultTile: {fileID: 920396984887397885, guid: 4c27e1147d201c2489237c40d79fc105,
+  defaultTile: {fileID: 9082045073538815263, guid: ff9a12d24f0d2964aaa1c9566fe812ac,
     type: 3}
   tileRoot: {fileID: 0}
   generateDungeon: 0
   dungeonRoot: {fileID: 0}
   dungeonTiles: []
+  red: {fileID: 2100000, guid: 0bd76f16eadc4d045a324fc46e461c40, type: 2}
 --- !u!4 &450469609
 Transform:
   m_ObjectHideFlags: 0

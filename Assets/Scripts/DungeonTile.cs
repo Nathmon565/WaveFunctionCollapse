@@ -15,7 +15,6 @@ public class DungeonTile : MonoBehaviour {
         public bool localXNeg;
         ///<summary>Whether this tile can connect on the local +Z axis</summary>
         public bool localZPos;
-        
         ///<summary>Whether this tile can connect on the local -Z axis</summary>
         public bool localZNeg;
     }
@@ -30,6 +29,17 @@ public class DungeonTile : MonoBehaviour {
     
     // Awake is called before Start()
     private void Awake() {
+        //Figure out which directions this tile can connect to
+        SetDirectionAvailability();
+    }
+
+    // Start is called before the first frame update
+    void Start() {
+        
+    }
+
+    ///<summary>Set the available direction booleans based on the materials of the model at the cardinal directions</summary>
+    public void SetDirectionAvailability() {
         //Credit to Damien O'Connell at
         //https://forum.unity.com/threads/detecting-material-material-index-and-raycast-hit.40377/
         //for detecting material from a raycast hit
@@ -49,19 +59,6 @@ public class DungeonTile : MonoBehaviour {
             subMeshesFaceTotals[i] = mesh.GetTriangles(i).Length / 3;
         }
         
-        //Figure out which directions this tile can connect to
-        SetDirectionAvailability();
-    }
-
-    // Start is called before the first frame update
-    void Start() {
-        
-    }
-
-    ///<summary>Set the available direction booleans based on the materials of the model at the cardinal directions</summary>
-    public void SetDirectionAvailability() {
-        //Debug.Log("Setting direction availability of tile " + name);
-        
         
         //Check and set the direction availability for each direction
         directions.localXPos = CheckRayCastDirection(new Vector3( 4.9f, 1, 0));
@@ -77,10 +74,6 @@ public class DungeonTile : MonoBehaviour {
     private bool CheckRayCastDirection(Vector3 originOffset) {
         RaycastHit hit;
         if(Physics.Raycast(transform.TransformPoint(originOffset), -transform.up, out hit, 5)) {
-            //Credit to Damien O'Connell at
-            //https://forum.unity.com/threads/detecting-material-material-index-and-raycast-hit.40377/
-            //for detecting material from a raycast hit
-
             //Which sub mesh we hit
             int hitSubMeshNumber = 0;
             //The maximum number we can hit on the current submesh
@@ -100,7 +93,6 @@ public class DungeonTile : MonoBehaviour {
                 //Otherwise, try again
             }
 
-            //Debug.Log("Hitting triangle " + hit.triangleIndex + "\nSubmesh " + hitSubMeshNumber);
             //If we hit the gray material (wall)
             if(hitSubMeshNumber == 1) {
                 return false;
@@ -112,16 +104,5 @@ public class DungeonTile : MonoBehaviour {
             Debug.LogError("Raycast failed when setting direction availability " + originOffset + " - It didn't hit anything.");
             return false;
         }
-    }
-
-    // Update is called once per frame
-    void Update() {
-        //Debug rays for visibility in the editor
-        /*
-        Debug.DrawRay(transform.TransformPoint(new Vector3(4.9f, 1, 0)), -transform.up, Color.red, Time.deltaTime);
-        Debug.DrawRay(transform.TransformPoint(new Vector3(-4.9f, 1, 0)), -transform.up, Color.yellow, Time.deltaTime);
-        Debug.DrawRay(transform.TransformPoint(new Vector3(0, 1, 4.9f)), -transform.up, Color.blue, Time.deltaTime);
-        Debug.DrawRay(transform.TransformPoint(new Vector3(0, 1, -4.9f)), -transform.up, Color.magenta, Time.deltaTime);
-        */
     }
 }
