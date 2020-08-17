@@ -29,8 +29,7 @@ public class DungeonTile : MonoBehaviour {
     
     // Awake is called before Start()
     private void Awake() {
-        //Figure out which directions this tile can connect to
-        SetDirectionAvailability();
+        
     }
 
     // Start is called before the first frame update
