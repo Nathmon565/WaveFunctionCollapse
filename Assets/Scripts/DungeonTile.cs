@@ -4,38 +4,25 @@ using UnityEngine;
 
 ///<summary>Defines how this tile can be placed in relation to other tiles</summary>
 public class DungeonTile : MonoBehaviour {
-
-    ///<summary>A class containing the booleans which determine what directions this
-    /// tile can connect to</summary>
-    [System.Serializable]
-    public class AvailableDirections {
-        ///<summary>Whether this tile can connect on the local +X axis</summary>
-        public bool localXPos;
-        ///<summary>Whether this tile can connect on the local -X axis</summary>
-        public bool localXNeg;
-        ///<summary>Whether this tile can connect on the local +Z axis</summary>
-        public bool localZPos;
-        ///<summary>Whether this tile can connect on the local -Z axis</summary>
-        public bool localZNeg;
-    }
-
+    ///<summary>What location in the DungeonGenerator.dungeonTiles array are we in?</summary>
+    public int index;
     public bool readyToUse = false;
-    public AvailableDirections directions = new AvailableDirections();
-    
+    ///<summary>What local directions this tile can connect to (up, right, down, left)</summary>
+    public List<bool> localDirections;
+	///<summary>What global directions this tile can connect to (local + rotation)</summary>
+	public List<bool> globalDirections;
     ///<summary>How many faces each sub mesh has</summary>
     private int[] subMeshesFaceTotals;
     ///<summary>How many sub meshes there are</summary>
     private int totalSubMeshes;
-    
-    // Awake is called before Start()
-    private void Awake() {
-        
-    }
+	public bool updateRotationConnections;
 
-    // Start is called before the first frame update
-    void Start() {
-        
-    }
+	private void Update() {
+		if(updateRotationConnections) {
+			UpdateRotationConnections();
+			updateRotationConnections = false;
+		}
+	}
 
     ///<summary>Set the available direction booleans based on the materials of the model at the cardinal directions</summary>
     public void SetDirectionAvailability() {
@@ -60,10 +47,12 @@ public class DungeonTile : MonoBehaviour {
         
         
         //Check and set the direction availability for each direction
-        directions.localXPos = CheckRayCastDirection(new Vector3( 4.9f, 1, 0));
-        directions.localXNeg = CheckRayCastDirection(new Vector3(-4.9f, 1, 0));
-        directions.localZPos = CheckRayCastDirection(new Vector3(0, 1,  4.9f));
-        directions.localZNeg = CheckRayCastDirection(new Vector3(0, 1, -4.9f));
+        localDirections = new List<bool>(){
+            CheckRayCastDirection(new Vector3(0, 1,  4.9f)),
+			CheckRayCastDirection(new Vector3( 4.9f, 1, 0)),
+			CheckRayCastDirection(new Vector3(0, 1, -4.9f)),
+			CheckRayCastDirection(new Vector3(-4.9f, 1, 0))
+        };
 
         readyToUse = true;
     }
@@ -104,4 +93,19 @@ public class DungeonTile : MonoBehaviour {
             return false;
         }
     }
+
+	///<summary>Update the list of rotations for this tile if it's been rotated</summary>
+	public void UpdateRotationConnections() {
+		//If the rotation is not zero
+		if(Mathf.Repeat(transform.localEulerAngles.y, 360) != 0) {
+			List<bool> d = localDirections;
+			//Find the rotation of this tile
+			int i = Mathf.RoundToInt(Mathf.Repeat(transform.localEulerAngles.y, 360) / 90f);
+			//Assign the rotations based on the offset local rotations
+			globalDirections = new List<bool>{d[(int)Mathf.Repeat(i, 4)], d[(int)Mathf.Repeat(i + 1, 4)], d[(int)Mathf.Repeat(i + 2, 4)], d[(int)Mathf.Repeat(i + 3, 4)]};
+			Debug.Log("i = " + i + ": " + Mathf.Repeat(i, 4) + " " + Mathf.Repeat(i + 1, 4) + " " +  Mathf.Repeat(i + 2, 4) + " " + Mathf.Repeat(i + 3, 4));
+		}
+		//If the tile isn't rotated, just use the global directions
+		else { globalDirections = localDirections; }
+	}
 }

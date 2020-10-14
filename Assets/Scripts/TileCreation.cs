@@ -56,59 +56,33 @@ public class TileCreation : MonoBehaviour {
     public GameObject ChangeTile(GameObject tile, Quaternion rot) {
         //Create the new tile, in the proper position and rotation
         GameObject newTile = Instantiate(tile, transform.position, rot, transform.parent);
+        Debug.Log("Removing tile index " + index);
         //Set the new tile to replace this incomplete tile
-        dungeonGenerator.dungeonTiles[index] = newTile;
+        dungeonGenerator.dungeonTiles[dungeonGenerator.dungeonTiles.IndexOf(gameObject)] = newTile;
+        
         dungeonGenerator.tilesGenerated++;
         //Destroy the incomplete tile
         Destroy(gameObject);
         return newTile;
     }
 
-    ///<summary>Find and return an adjacent tile</summary>
-    ///<param name="direction">Which direction to look in? 0 is up, 1 is right, 2 is down, 3 is left</param>
-    public GameObject FindAdjacentTile(int direction) {
-        int dungeonWidth = (int)dungeonGenerator.dungeonDimensions.x;
-        int dungeonTiles = (int)(dungeonGenerator.dungeonDimensions.x * dungeonGenerator.dungeonDimensions.y);
-        if(direction == 0) {
-            //Up
-            //If our position is not on the top row
-            if(index >= dungeonWidth) {
-                //The tile is one row above us
-                return dungeonGenerator.dungeonTiles[index - dungeonWidth];
-            } else {
-                return null;
+    ///<summary>Eliminates any tiles that wouldn't fit with the given direction and availability</summary>
+    ///<param name="direction">Which LOCAL direction to check</summary>
+    ///<param name="available">Whether the direction its checking with is available or not</summary>
+    public void CompareRotation(int direction, bool available) {
+        //For each possible tile
+        for(int i = 0; i < possibleTiles.ToArray().Length; i++) {
+            //For each rotation of that tile
+            for(int j = 0; j < possibleTiles[i].availableRotations.ToArray().Length; j++) {
+                //If the rotated tile would fit in the direction of the availability
+                if(dungeonGenerator.tiles[i].GetComponent<DungeonTile>().localDirections[(int)Mathf.Repeat(direction + j, 3)] != available) {
+                    //If not, set it to false
+                    possibleTiles[i].availableRotations[j] = false;
+                }
+                //Update the overall availability of that tile
+                possibleTiles[i].SetAvailability();
             }
-        } else if(direction == 1) { 
-            //Right
-            //If our position is not on the right edge
-            if(index + 1 % dungeonWidth != 0) {
-                //The tile is one to our right
-                return dungeonGenerator.dungeonTiles[index + 1];
-            } else {
-                return null;
-            }
-        } else if(direction == 2) {
-            //Down
-            //If our position is not on the bottom row
-            if(index <= dungeonTiles - 1 - dungeonWidth) {
-                //The tile is one row below us
-                return dungeonGenerator.dungeonTiles[dungeonTiles - 1 - dungeonWidth - index];
-            } else {
-                return null;
-            }
-        } else if(direction == 3) {
-            //Left
-            //If our position is not on the left edge
-            if(index % dungeonWidth != 0) {
-                //The tile is one to our left
-                return dungeonGenerator.dungeonTiles[index - 1];
-            } else {
-                return null;
-            }
-        } else {
-            //Invalid input
-            Debug.LogError("direction (" + direction + ") is not between 0 and 3");
-            return null;
         }
+        UpdateEntropy();
     }
 }

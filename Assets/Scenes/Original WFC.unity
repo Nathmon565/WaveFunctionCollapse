@@ -163,7 +163,6 @@ MonoBehaviour:
   generateDungeon: 0
   dungeonRoot: {fileID: 0}
   dungeonTiles: []
-  incompleteTiles: []
   cameraController: {fileID: 1058488172}
   runTiles: 1
   tilesGenerated: 0
