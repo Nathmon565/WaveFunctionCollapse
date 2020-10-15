@@ -49,9 +49,9 @@ public class DungeonTile : MonoBehaviour {
         //Check and set the direction availability for each direction
         localDirections = new List<bool>(){
             CheckRayCastDirection(new Vector3(0, 1,  4.9f)),
-			CheckRayCastDirection(new Vector3( 4.9f, 1, 0)),
-			CheckRayCastDirection(new Vector3(0, 1, -4.9f)),
-			CheckRayCastDirection(new Vector3(-4.9f, 1, 0))
+            CheckRayCastDirection(new Vector3( 4.9f, 1, 0)),
+            CheckRayCastDirection(new Vector3(0, 1, -4.9f)),
+            CheckRayCastDirection(new Vector3(-4.9f, 1, 0))
         };
 
         readyToUse = true;
