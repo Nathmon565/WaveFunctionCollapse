@@ -47,12 +47,14 @@ public class DungeonTile : MonoBehaviour {
         
         
         //Check and set the direction availability for each direction
-        localDirections = new List<bool>(){
+        localDirections = new List<bool>() {
             CheckRayCastDirection(new Vector3(0, 1,  4.9f)),
             CheckRayCastDirection(new Vector3( 4.9f, 1, 0)),
             CheckRayCastDirection(new Vector3(0, 1, -4.9f)),
             CheckRayCastDirection(new Vector3(-4.9f, 1, 0))
         };
+
+        UpdateRotationConnections();
 
         readyToUse = true;
     }
@@ -103,7 +105,6 @@ public class DungeonTile : MonoBehaviour {
 			int i = Mathf.RoundToInt(Mathf.Repeat(transform.localEulerAngles.y, 360) / 90f);
 			//Assign the rotations based on the offset local rotations
 			globalDirections = new List<bool>{d[(int)Mathf.Repeat(i, 4)], d[(int)Mathf.Repeat(i + 1, 4)], d[(int)Mathf.Repeat(i + 2, 4)], d[(int)Mathf.Repeat(i + 3, 4)]};
-			Debug.Log("i = " + i + ": " + Mathf.Repeat(i, 4) + " " + Mathf.Repeat(i + 1, 4) + " " +  Mathf.Repeat(i + 2, 4) + " " + Mathf.Repeat(i + 3, 4));
 		}
 		//If the tile isn't rotated, just use the global directions
 		else { globalDirections = localDirections; }

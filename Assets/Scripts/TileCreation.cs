@@ -56,7 +56,6 @@ public class TileCreation : MonoBehaviour {
     public GameObject ChangeTile(GameObject tile, Quaternion rot) {
         //Create the new tile, in the proper position and rotation
         GameObject newTile = Instantiate(tile, transform.position, rot, transform.parent);
-        Debug.Log("Removing tile index " + index);
         //Set the new tile to replace this incomplete tile
         dungeonGenerator.dungeonTiles[dungeonGenerator.dungeonTiles.IndexOf(gameObject)] = newTile;
         
@@ -67,15 +66,27 @@ public class TileCreation : MonoBehaviour {
     }
 
     ///<summary>Eliminates any tiles that wouldn't fit with the given direction and availability</summary>
-    ///<param name="direction">Which LOCAL direction to check</summary>
-    ///<param name="available">Whether the direction its checking with is available or not</summary>
+    ///<param name="direction">Which GLOBAL direction to check</param>
+    ///<param name="available">Whether the direction its checking with is available or not</param>
     public void CompareRotation(int direction, bool available) {
         //For each possible tile
         for(int i = 0; i < possibleTiles.ToArray().Length; i++) {
             //For each rotation of that tile
             for(int j = 0; j < possibleTiles[i].availableRotations.ToArray().Length; j++) {
-                //If the rotated tile would fit in the direction of the availability
-                if(dungeonGenerator.tiles[i].GetComponent<DungeonTile>().localDirections[(int)Mathf.Repeat(direction + j, 3)] != available) {
+                //The directions at which this tile is available
+                List<bool> localDirections = dungeonGenerator.tiles[i].GetComponent<DungeonTile>().localDirections;
+                //Whether the tile at the direction will fit or not
+                bool availableRotation;
+                
+                //If direction is less than j subtract
+                if(direction > j) {
+                    availableRotation = (localDirections[(int)Mathf.Repeat(Mathf.Abs(direction - j), 4)]);
+                } else {
+                    //Otherwise, add
+                    availableRotation = (localDirections[(int)Mathf.Repeat(direction + j, 4)]);
+                }
+
+                if(availableRotation != available) {
                     //If not, set it to false
                     possibleTiles[i].availableRotations[j] = false;
                 }

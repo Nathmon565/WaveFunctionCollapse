@@ -176,29 +176,33 @@ public class DungeonGenerator : MonoBehaviour {
                 //Force the first tile to be chosen
                 ChooseRandomTileAndRotation(targetTile.possibleTiles);
 
-				DungeonTile selectedTile = targetTileObj.GetComponent<DungeonTile>();
+				List<DungeonTile> selectedTile = new List<DungeonTile>{targetTileObj.GetComponent<DungeonTile>()};
 
                 bool knockingOut = true;
                 
                 while(knockingOut) {
-                    //TODO continue knocking out options until nothing can be chosen
                     //For each cardinal direction of this tile
+                    int tileIndex = selectedTile.ToArray().Length - 1;
 					for(int i = 0; i < 4; i++) {
 						//Get a reference to an adjacent tile
 						GameObject tileObj = FindAdjacentTile(targetTileObj.GetComponent<DungeonTile>(), i);
-						TileCreation tile;
 						//If it is an incomplete tile
-						if(tileObj != null && tileObj.GetComponent<TileCreation>() != null) {
+						if(tileObj != null && tileObj.GetComponent<TileCreation>() != null && selectedTile.ToArray().Length >= 0) {
 							//Get a tileCreation reference
-							tile = tileObj.GetComponent<TileCreation>();
-                            
-							
-							//tile.CompareRotation(Mathf.Repeat(i + 2, 3), );
+							TileCreation tile = tileObj.GetComponent<TileCreation>();
+                            //Remove the impossible rotations for the tile
+							tile.CompareRotation((int)Mathf.Repeat(i + 2, 4), selectedTile[tileIndex].globalDirections[(int)Mathf.Repeat(i + 2, 4)]);
+                            //Add that tile to the queue
+                            selectedTile.Add(tileObj.GetComponent<DungeonTile>());
 						}
 					}
+                    //Remove the tile we were selecting, we've exhausted the possibilities
+                    selectedTile.RemoveAt(tileIndex);
+                    if(selectedTile.ToArray().Length >= 0) {
+                        //if nothing else can be done, exit
+                        knockingOut = false;
+                    }
                     
-                    //if nothing else can be done, exit
-                    knockingOut = false;
                 }
                 
             }
@@ -250,6 +254,7 @@ public class DungeonGenerator : MonoBehaviour {
                 if(tileChoices == 1 && rotationChoices == 1) {
                     //Create the tile
                     tileList[i].GetComponent<TileCreation>().ChangeTile(tiles[tileChoice], Quaternion.Euler(new Vector3(0, rotationChoice * 90, 0)));
+                    tileList[i].GetComponent<DungeonTile>().UpdateRotationConnections();
                 }
             }
         }
