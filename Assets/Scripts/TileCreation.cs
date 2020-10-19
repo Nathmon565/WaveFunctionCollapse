@@ -31,6 +31,7 @@ public class TileCreation : MonoBehaviour {
 
     ///<summary>How many possibilities does this tile have?</summary>
     public int entropy;
+	public GameObject entropySphere;
 
     [Header("References")]
     ///<summary>A reference to the dungeon generator</summary>
@@ -40,14 +41,21 @@ public class TileCreation : MonoBehaviour {
     public void UpdateEntropy() {
         //Reset the value
         entropy = 0;
+		int maxEntropy = 0;
         //For each tile
         foreach(PossibleTiles p in possibleTiles) {
             //For each rotation
             foreach(bool b in p.availableRotations) {
                 //Add one entropy per each rotation
                 if(b) { entropy++; }
+				maxEntropy++;
             }
         }
+		if(entropySphere != null) { Destroy(entropySphere); }
+		entropySphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+		entropySphere.transform.parent = transform;
+		entropySphere.transform.localPosition = Vector3.zero;
+		entropySphere.transform.localScale = new Vector3(10, 10, 10) * entropy/maxEntropy;
     }
 
     ///<summary>Replace this tile with a target tile, replacing the tile in the dungeonTiles list as well</summary>

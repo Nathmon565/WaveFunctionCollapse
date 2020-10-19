@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 ///<summary>Handles the overall generation of the dungeon</summary>
 public class DungeonGenerator : MonoBehaviour {
@@ -12,6 +13,8 @@ public class DungeonGenerator : MonoBehaviour {
     ///<summary>The default tile to be placed when creating the dungeon</summary>
     public GameObject defaultTile;
     public GameObject tileRoot;
+	[Range(0, 1)]
+	public float stepDelay = 0;
     [Space(10)]
 
     ///<summary>Force the dungeon to generate</summary>
@@ -25,7 +28,9 @@ public class DungeonGenerator : MonoBehaviour {
     [Header("Camera")]
     ///<summary>A reference to the camera controller</summary>
     public GameObject cameraController;
+	public TextMeshProUGUI statusText;
     [Header("Debug")]
+	public Transform tileHighlight;
     public int runTiles = 1;
     public int tilesGenerated = 0;
 
@@ -64,15 +69,18 @@ public class DungeonGenerator : MonoBehaviour {
     ///<summary>Generate the dungeon with the current setup</summary>
     public void GenerateDungeon() {
         tilesGenerated = 0;
+		statusText.text = "Pre-generation...";
         Debug.Log("Generating the dungeon...\nWidth: " + dungeonDimensions.x + ", Length: " + dungeonDimensions.y + ", Tiles: " + (dungeonDimensions.x * dungeonDimensions.y));
         float timeStart = Time.realtimeSinceStartup;
         
         //Place the incomplete tiles
         CreateIncompleteTiles();
+		statusText.text = "Done placing incomplete tiles.";
         Debug.Log("Incomplete tile placement complete - time taken: " + (Mathf.Round((Time.realtimeSinceStartup - timeStart) * 100000) / 100f) + "ms (" + (Mathf.Round((Time.realtimeSinceStartup - timeStart) * 100) / 100f) + " seconds)");
 
         //Start the Wave Function Collapse
-        WFC();
+        StartCoroutine(WFC());
+		statusText.text = "Done generating.";
         Debug.Log("Dungeon generation complete! Total time taken: " + (Mathf.Round((Time.realtimeSinceStartup - timeStart) * 100000) / 100f) + "ms (" + (Mathf.Round((Time.realtimeSinceStartup - timeStart) * 100) / 100f) + " seconds) ~" + (Mathf.Round((Time.realtimeSinceStartup - timeStart) / (dungeonDimensions.x * dungeonDimensions.y) * 100000) / 100f) + "ms/tile");
     }
 
@@ -124,6 +132,7 @@ public class DungeonGenerator : MonoBehaviour {
     
     ///<summary>Iterate through the width and height settings to place all of the incomplete tiles in the dungeon</summary>
     private void CreateIncompleteTiles() {
+		statusText.text = "Creating incomplete tiles...";
         //Place the camera
         cameraController.transform.position = new Vector3(dungeonDimensions.x * 5, 0, dungeonDimensions.y * 5);
         cameraController.transform.GetChild(0).localPosition = new Vector3(0, dungeonDimensions.x * 5 + dungeonDimensions.y * 5, 0);
@@ -151,7 +160,8 @@ public class DungeonGenerator : MonoBehaviour {
     }
 
     ///<summary>Wave Function Collapse: select a tile, then start knocking out choices. Rinse and repeat</summary>
-    private void WFC() {
+    private IEnumerator WFC() {
+		statusText.text = "Starting WFC...";
         //Keep track of whether we are done, to know when to stop
         bool doneGenerating = false;
         //Debug
@@ -163,6 +173,7 @@ public class DungeonGenerator : MonoBehaviour {
         while(!doneGenerating) {
             //Select a random incomplete tile with the highest entropy
             GameObject targetTileObj = FindMaxEntropy(dungeonTiles);
+			List<DungeonTile> selectedTile = new List<DungeonTile> {};
             //Check to make sure we actually have a target
             if(targetTileObj != null) {
                 //Get a reference to the TileCreation
@@ -175,15 +186,20 @@ public class DungeonGenerator : MonoBehaviour {
 
                 //Force the first tile to be chosen
                 ChooseRandomTileAndRotation(targetTile.possibleTiles);
+				if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
 
-				List<DungeonTile> selectedTile = new List<DungeonTile>{targetTileObj.GetComponent<DungeonTile>()};
+				selectedTile.Add(targetTileObj.GetComponent<DungeonTile>());
+				
 
                 bool knockingOut = true;
                 
                 while(knockingOut) {
+					statusText.text = "Knocking out nearby tiles...";
                     //For each cardinal direction of this tile
                     int tileIndex = selectedTile.ToArray().Length - 1;
+					tileHighlight.position = selectedTile[tileIndex].transform.position + new Vector3(0, 2, 0);
 					for(int i = 0; i < 4; i++) {
+						statusText.text = "Knocking out nearby tiles... (Checking rotations...)";
 						//Get a reference to an adjacent tile
 						GameObject tileObj = FindAdjacentTile(targetTileObj.GetComponent<DungeonTile>(), i);
 						//If it is an incomplete tile
@@ -194,8 +210,10 @@ public class DungeonGenerator : MonoBehaviour {
 							tile.CompareRotation((int)Mathf.Repeat(i + 2, 4), selectedTile[tileIndex].globalDirections[(int)Mathf.Repeat(i + 2, 4)]);
                             //Add that tile to the queue
                             selectedTile.Add(tileObj.GetComponent<DungeonTile>());
+							if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
 						}
 					}
+					statusText.text = "Knocking out nearby tiles... (Removing current tile...)";
                     //Remove the tile we were selecting, we've exhausted the possibilities
                     selectedTile.RemoveAt(tileIndex);
                     if(selectedTile.ToArray().Length >= 0) {
@@ -204,20 +222,23 @@ public class DungeonGenerator : MonoBehaviour {
                     }
                     
                 }
-                
+                if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
             }
+			statusText.text = "Looping tile generation...";
             //Pop any completed tiles from the list of incomplete tiles, setting them as their chosen tile
             dungeonTiles = PopTiles(dungeonTiles);
+			if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
             //If there are no more incomplete tiles, end the loop.
             if(FindMaxEntropy(dungeonTiles) == null) { doneGenerating = true; }
         }
+		if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
     }
 
     ///<summary>Search through the list of incomplete tiles and finalize tiles that only have one possibility</summary>
     private List<GameObject> PopTiles(List<GameObject> tileList) {
         //Create a new list of tiles
         List<GameObject> newTileList = tileList;
-
+		int l = 0;
         //For each tile in the list
         for(int i = 0; i < tileList.ToArray().Length; i++) {
             //Make sure this tile has TileCreation
@@ -255,10 +276,10 @@ public class DungeonGenerator : MonoBehaviour {
                     //Create the tile
                     tileList[i].GetComponent<TileCreation>().ChangeTile(tiles[tileChoice], Quaternion.Euler(new Vector3(0, rotationChoice * 90, 0)));
                     tileList[i].GetComponent<DungeonTile>().UpdateRotationConnections();
+					l++;
                 }
             }
         }
-        
         //Return the new list
         return newTileList;
     }
@@ -296,6 +317,7 @@ public class DungeonGenerator : MonoBehaviour {
     ///<summary>Randomly chooses a tile and its rotation from available options. This is used to force entropy to decrease by choosing a random tile</summary>
     ///<param name="incompleteTileTiles">The list of possible tiles on the incomplete tile</param>
     private void ChooseRandomTileAndRotation(List<TileCreation.PossibleTiles> incompleteTileTiles) {
+		statusText.text = "Observing a tile...";
         //Keep a list of possible tiles to choose from
         List<TileCreation.PossibleTiles> possibleTiles = new List<TileCreation.PossibleTiles>();
         //Keep a list of which tile indecies are in that list
