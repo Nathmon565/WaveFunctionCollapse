@@ -23,10 +23,8 @@ public class DungeonTile : MonoBehaviour {
 			updateRotationConnections = false;
 		}
 	}
-
-    ///<summary>Set the available direction booleans based on the materials of the model at the cardinal directions</summary>
-    public void SetDirectionAvailability() {
-        //Credit to Damien O'Connell at
+	private void Awake() {
+		//Credit to Damien O'Connell at
         //https://forum.unity.com/threads/detecting-material-material-index-and-raycast-hit.40377/
         //for detecting material from a raycast hit
 
@@ -44,8 +42,10 @@ public class DungeonTile : MonoBehaviour {
             //Calculate the number of faces on this mesh
             subMeshesFaceTotals[i] = mesh.GetTriangles(i).Length / 3;
         }
-        
-        
+	}
+
+    ///<summary>Set the available direction booleans based on the materials of the model at the cardinal directions</summary>
+    public void SetDirectionAvailability() {
         //Check and set the direction availability for each direction
         localDirections = new List<bool>() {
             CheckRayCastDirection(new Vector3(0, 1,  4.9f)),
@@ -60,10 +60,11 @@ public class DungeonTile : MonoBehaviour {
     }
 
     ///<summary>Sets the boolean according to originOffset and what the raycast hits</summary>
-    ///<param name="originOffset">The local position that the raycast should originate from. Also used to determine which bool to change</param>
-    private bool CheckRayCastDirection(Vector3 originOffset) {
+    ///<param name="originOffset">The position offset that the raycast should originate from. Also used to determine which bool to change</param>
+    ///<param name="localSpace">Whether the cooridnates will be in local space, or position + global space</param>
+    private bool CheckRayCastDirection(Vector3 originOffset, bool localSpace = true) {
         RaycastHit hit;
-        if(Physics.Raycast(transform.TransformPoint(originOffset), -transform.up, out hit, 5)) {
+        if((localSpace && Physics.Raycast(transform.TransformPoint(originOffset), -transform.up, out hit, 5)) || (!localSpace && Physics.Raycast(transform.position + originOffset, -transform.up, out hit, 5))) {
             //Which sub mesh we hit
             int hitSubMeshNumber = 0;
             //The maximum number we can hit on the current submesh
@@ -91,7 +92,7 @@ public class DungeonTile : MonoBehaviour {
                 return true;
             }
         } else {
-            Debug.LogError("Raycast failed when setting direction availability " + originOffset + " - It didn't hit anything.");
+            Debug.LogError("Raycast failed when setting direction availability " + originOffset + " for tile #" + index + " - It didn't hit anything.");
             return false;
         }
     }
@@ -102,9 +103,19 @@ public class DungeonTile : MonoBehaviour {
 		if(Mathf.Repeat(transform.localEulerAngles.y, 360) != 0) {
 			List<bool> d = localDirections;
 			//Find the rotation of this tile
+			
 			int i = Mathf.RoundToInt(Mathf.Repeat(transform.localEulerAngles.y, 360) / 90f);
-			//Assign the rotations based on the offset local rotations
-			globalDirections = new List<bool>{d[(int)Mathf.Repeat(i, 4)], d[(int)Mathf.Repeat(i + 1, 4)], d[(int)Mathf.Repeat(i + 2, 4)], d[(int)Mathf.Repeat(i + 3, 4)]};
+			
+			string log = "";
+			log += "Before: [" + globalDirections[0] + ", " + globalDirections[1] + ", " + globalDirections[2] + ", " + globalDirections[3] + "] rotated by " + i + "\n";
+			
+			//Assign the rotations based on the rotation of this tile
+			globalDirections = new List<bool>{d[(int)Mathf.Repeat(i, 4)], d[(int)Mathf.Repeat(i - 1, 4)], d[(int)Mathf.Repeat(i - 2, 4)], d[(int)Mathf.Repeat(i - 3, 4)]};
+			//globalDirections = new List<bool>{d[(int)Mathf.Repeat(i, 4)], d[(int)Mathf.Repeat(i + 1, 4)], d[(int)Mathf.Repeat(i + 2, 4)], d[(int)Mathf.Repeat(i + 3, 4)]};
+
+			log += "After: [" + globalDirections[0] + ", " + globalDirections[1] + ", " + globalDirections[2] + ", " + globalDirections[3] + "]";
+
+			Debug.Log(log);
 		}
 		//If the tile isn't rotated, just use the global directions
 		else { globalDirections = localDirections; }

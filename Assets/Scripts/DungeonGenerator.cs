@@ -103,17 +103,33 @@ public class DungeonGenerator : MonoBehaviour {
                 //If all 4 directions are true (It's an X)
                 if(directions[0] && directions[1] && directions[2] && directions[3]) {
                     //X can only have one rotation
+                    possibleTile.name = "X";
                     possibleTile.availableRotations = new List<bool> {true, false, false, false};
                 }
                 //If only 2 opposite x directions are true (It's an I)
-                else if(directions[0] && directions[1] && !directions[2] && !directions[3]) {
+                else if(!directions[0] && directions[1] && !directions[2] && directions[3]) {
                     //I can only have 2 rotations
+                    possibleTile.name = "I";
                     possibleTile.availableRotations = new List<bool> {true, true, false, false};
+                }
+                //If only one direction is true (It's a C)
+                else if(!directions[0] && directions[1] && !directions[2] && !directions[3]) {
+                    //C can only have 1 rotation
+                    possibleTile.name = "C";
                 }
                 //If no directions are true (it's a blank tile)
                 else if(!directions[0] && !directions[1] && !directions[2] && !directions[3]) {
                     //Empty can only have 1 rotation
+                    possibleTile.name = "O";
                     possibleTile.availableRotations = new List<bool> {true, false, false, false};
+                }
+                //If it's two adjacent directions
+                else if(directions[1] && directions[2]) {
+                    possibleTile.name = "L";
+                }
+                //If it's three directions
+                else {
+                    possibleTile.name = "T";
                 }
                 //Add the tile
                 tileCreation.possibleTiles.Add(possibleTile);
@@ -148,10 +164,10 @@ public class DungeonGenerator : MonoBehaviour {
         dungeonRoot.name = "Dungeon Root";
         
         //Create the list of empty tiles
-        for(int x = 0; x < dungeonDimensions.x; x++) {
-            for(int y = 0; y < dungeonDimensions.y; y++) {
+        for(int y = (int)dungeonDimensions.y; y > 0; y--) {
+            for(int x = 0; x < dungeonDimensions.x; x++) {
                 //Create an empty tile, and add it to the list of tiles
-                GameObject tile = Instantiate(defaultTile, new Vector3(x * 10 + 5, 0, y * 10 + 5), Quaternion.Euler(Vector3.zero), dungeonRoot.transform);
+                GameObject tile = Instantiate(defaultTile, new Vector3(x * 10 + 5, 0, y * 10 - 5), Quaternion.Euler(Vector3.zero), dungeonRoot.transform);
                 dungeonTiles.Add(tile);
                 //Set the index of the tile as the length of the array - 1
                 tile.GetComponent<DungeonTile>().index = dungeonTiles.ToArray().Length - 1;
@@ -173,6 +189,8 @@ public class DungeonGenerator : MonoBehaviour {
         while(!doneGenerating) {
             //Select a random incomplete tile with the highest entropy
             GameObject targetTileObj = FindMaxEntropy(dungeonTiles);
+            int tileObjIndex = targetTileObj.GetComponent<DungeonTile>().index;
+            //Debug.Log("Entropy: " + targetTileObj.GetComponent<TileCreation>().entropy);
 			List<DungeonTile> selectedTile = new List<DungeonTile> {};
             //Check to make sure we actually have a target
             if(targetTileObj != null) {
@@ -184,8 +202,20 @@ public class DungeonGenerator : MonoBehaviour {
                     break;
                 }
 
+				
+
                 //Force the first tile to be chosen
+                statusText.text = "Observing a tile...";
                 ChooseRandomTileAndRotation(targetTile.possibleTiles);
+				targetTile.GetComponent<DungeonTile>().UpdateRotationConnections();
+
+				targetTileObj = dungeonTiles[tileObjIndex];
+                tileHighlight.position = targetTileObj.transform.position + new Vector3(0, 2, 0);
+				if(!tileHighlight.gameObject.activeSelf) { tileHighlight.gameObject.SetActive(true); }
+				if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
+
+                dungeonTiles = PopTiles(dungeonTiles);
+                targetTileObj = dungeonTiles[tileObjIndex];
 				if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
 
 				selectedTile.Add(targetTileObj.GetComponent<DungeonTile>());
@@ -197,9 +227,9 @@ public class DungeonGenerator : MonoBehaviour {
 					statusText.text = "Knocking out nearby tiles...";
                     //For each cardinal direction of this tile
                     int tileIndex = selectedTile.ToArray().Length - 1;
-					tileHighlight.position = selectedTile[tileIndex].transform.position + new Vector3(0, 2, 0);
+                    if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
 					for(int i = 0; i < 4; i++) {
-						statusText.text = "Knocking out nearby tiles... (Checking rotations...)";
+						statusText.text = "Knocking out nearby tiles... (Checking rotation " + i + "...)";
 						//Get a reference to an adjacent tile
 						GameObject tileObj = FindAdjacentTile(targetTileObj.GetComponent<DungeonTile>(), i);
 						//If it is an incomplete tile
@@ -207,11 +237,16 @@ public class DungeonGenerator : MonoBehaviour {
 							//Get a tileCreation reference
 							TileCreation tile = tileObj.GetComponent<TileCreation>();
                             //Remove the impossible rotations for the tile
-							tile.CompareRotation((int)Mathf.Repeat(i + 2, 4), selectedTile[tileIndex].globalDirections[(int)Mathf.Repeat(i + 2, 4)]);
+							//tile.CompareRotation((int)Mathf.Repeat(i + 2, 4), selectedTile[tileIndex].globalDirections[(int)Mathf.Repeat(i + 2, 4)]);
+							List<bool> globalDirections = selectedTile[tileIndex].globalDirections;
+							List<bool> localDirections = selectedTile[tileIndex].localDirections;
+                            Debug.LogWarning("Tile " + tileObjIndex + " Checking gdir[" + i + "], result " + selectedTile[tileIndex].globalDirections[(int)Mathf.Repeat(i, 4)] +
+							"\ngdirs[" + globalDirections[0] + ", " + globalDirections[1] + ", " + globalDirections[2] + ", " + globalDirections[3] + "] ldirs[" + localDirections[0] + ", " + localDirections[1] + ", " + localDirections[2] + ", " + localDirections[3] + "]");
+                            tile.CompareRotation((int)Mathf.Repeat(i + 2, 4), selectedTile[tileIndex].globalDirections[i]);
                             //Add that tile to the queue
                             selectedTile.Add(tileObj.GetComponent<DungeonTile>());
-							if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
 						}
+                        if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
 					}
 					statusText.text = "Knocking out nearby tiles... (Removing current tile...)";
                     //Remove the tile we were selecting, we've exhausted the possibilities
@@ -232,6 +267,7 @@ public class DungeonGenerator : MonoBehaviour {
             if(FindMaxEntropy(dungeonTiles) == null) { doneGenerating = true; }
         }
 		if(stepDelay > 0) { yield return new WaitForSeconds(stepDelay); }
+        tileHighlight.gameObject.SetActive(false);
     }
 
     ///<summary>Search through the list of incomplete tiles and finalize tiles that only have one possibility</summary>
@@ -275,7 +311,6 @@ public class DungeonGenerator : MonoBehaviour {
                 if(tileChoices == 1 && rotationChoices == 1) {
                     //Create the tile
                     tileList[i].GetComponent<TileCreation>().ChangeTile(tiles[tileChoice], Quaternion.Euler(new Vector3(0, rotationChoice * 90, 0)));
-                    tileList[i].GetComponent<DungeonTile>().UpdateRotationConnections();
 					l++;
                 }
             }
@@ -296,10 +331,29 @@ public class DungeonGenerator : MonoBehaviour {
             if(tile) {
                 //If the tile's entropy is greater than or equal to the current highest entropy
                 if(tile.entropy >= maxEntropy) {
-                    //Set the max entropy as this tile
-                    maxEntropy = tile.entropy;
-                    //Add the 
+                    //Add the tile to the list
                     targetTiles.Add(tileObj);
+                    //If it is larger than maximum
+                    if(tile.entropy > maxEntropy) {
+                        //Set the max entropy as this tile's
+                        maxEntropy = tile.entropy;
+                        //We need to update the list and remove all of the smaller ones
+                        //Create a removal list
+                        List<TileCreation> tileRemovalList = new List<TileCreation>();
+                        //Loop through the target tile list
+                        foreach(GameObject tileR in targetTiles) {
+                            TileCreation tileRT = tileR.GetComponent<TileCreation>();
+                            //If it's lower than the max entropy
+                            if(tileRT.entropy < maxEntropy) {
+                                //Add it to the removal list
+                                tileRemovalList.Add(tileRT);
+                            }
+                        }
+                        //Remove the inadequate tiles from the list
+                        foreach(TileCreation t in tileRemovalList) {
+                            targetTiles.Remove(t.gameObject);
+                        }
+                    }
                 }
             }
         }
@@ -317,7 +371,6 @@ public class DungeonGenerator : MonoBehaviour {
     ///<summary>Randomly chooses a tile and its rotation from available options. This is used to force entropy to decrease by choosing a random tile</summary>
     ///<param name="incompleteTileTiles">The list of possible tiles on the incomplete tile</param>
     private void ChooseRandomTileAndRotation(List<TileCreation.PossibleTiles> incompleteTileTiles) {
-		statusText.text = "Observing a tile...";
         //Keep a list of possible tiles to choose from
         List<TileCreation.PossibleTiles> possibleTiles = new List<TileCreation.PossibleTiles>();
         //Keep a list of which tile indecies are in that list
@@ -386,7 +439,7 @@ public class DungeonGenerator : MonoBehaviour {
     public GameObject FindAdjacentTile(DungeonTile tTile, int direction) {
         int dungeonWidth = (int)dungeonDimensions.x;
         int totalTiles = dungeonTiles.ToArray().Length;
-        //Debug.Log(tTile.trueIndex + ", limit " + dungeonTiles.ToArray().Length);
+        //Debug.Log(tTile.index + ", limit " + dungeonTiles.ToArray().Length + ", width: " + dungeonWidth);
         if(direction == 0) {
             //Up
             //If our position is not on the top row
@@ -399,7 +452,7 @@ public class DungeonGenerator : MonoBehaviour {
         } else if(direction == 1) { 
             //Right
             //If our position is not on the right edge
-            if(tTile.index + 1 % dungeonWidth != 0 && tTile.index < dungeonWidth * dungeonDimensions.y - 1) {
+            if((tTile.index + 1) % dungeonWidth != 0) {
                 //The tile is one to our right
                 return dungeonTiles[tTile.index + 1];
             } else {
@@ -410,7 +463,7 @@ public class DungeonGenerator : MonoBehaviour {
             //If our position is not on the bottom row
             if(tTile.index <= totalTiles - 1 - dungeonWidth) {
                 //The tile is one row below us
-                return dungeonTiles[totalTiles - 1 - dungeonWidth - tTile.index];
+                return dungeonTiles[tTile.index + dungeonWidth];
             } else {
                 return null;
             }
