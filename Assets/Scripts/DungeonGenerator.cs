@@ -86,10 +86,10 @@ public class DungeonGenerator : MonoBehaviour {
 
     ///<summary>Create an instantiated and prepared version of the tile to be duplicated</summary>
     ///<param name="tile">The tile to be optimized</param>
-    ///<param name="posModifier">The x coordinate modifier to esnure the raycast is not blocked</param>
+    ///<param name="posModifier">The x coordinate modifier to ensure the raycast is not blocked</param>
     public GameObject OptimizeTile(GameObject tile, Transform parent, float posModifier) {
         GameObject newTile = Instantiate(tile, new Vector3(posModifier, 0, 0), Quaternion.Euler(Vector3.zero), parent);
-        //Run the direction availibility function
+        //Run the direction availability function
         newTile.GetComponent<DungeonTile>().SetDirectionAvailability();
         //If this is has TileCreation, meaning it's the incomplete tile
         if(newTile.GetComponent<TileCreation>()) {
@@ -373,8 +373,8 @@ public class DungeonGenerator : MonoBehaviour {
     private void ChooseRandomTileAndRotation(List<TileCreation.PossibleTiles> incompleteTileTiles) {
         //Keep a list of possible tiles to choose from
         List<TileCreation.PossibleTiles> possibleTiles = new List<TileCreation.PossibleTiles>();
-        //Keep a list of which tile indecies are in that list
-        List<int> possibleTileIndecies = new List<int>();
+        //Keep a list of which tile indices are in that list
+        List<int> possibleTileIndices = new List<int>();
         //Keep a list of which possible rotations to choose from
         List<int> availableRotations = new List<int>();
         //Keep a count variable
@@ -386,7 +386,7 @@ public class DungeonGenerator : MonoBehaviour {
                 //Add it to the list
                 possibleTiles.Add(tile);
                 //Add which index number it is
-                possibleTileIndecies.Add(c);
+                possibleTileIndices.Add(c);
             }
             c++;
         }
@@ -407,14 +407,14 @@ public class DungeonGenerator : MonoBehaviour {
         int randomRotation = availableRotations[Random.Range(0, availableRotations.ToArray().Length - 1)];
 
         //Apply the random choices to the original incomplete tile
-        //For each possible tile, set availibility to false
+        //For each possible tile, set availability to false
         foreach(TileCreation.PossibleTiles tile in possibleTiles) {
             //For each available rotation
             for(int i = 0; i < tile.availableRotations.ToArray().Length; i++) {
-                //Set the availibility to false
+                //Set the availability to false
                 tile.availableRotations[i] = false;
             }
-            //Set the availibility to false
+            //Set the availability to false
             tile.SetAvailability();
         }
         //For each rotation of the tile we chose
@@ -427,7 +427,7 @@ public class DungeonGenerator : MonoBehaviour {
             else {
                 randomTile.availableRotations[i] = false;
             }
-            //Set the availibility to true
+            //Set the availability to true
             randomTile.SetAvailability();
         }
         

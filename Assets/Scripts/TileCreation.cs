@@ -14,7 +14,7 @@ public class TileCreation : MonoBehaviour {
         ///<summary>Which rotations can this tile be in? 0, 90, 180, 270 along the y axis</summary>
         public List<bool> availableRotations = new List<bool> {true, true, true, true};
 
-        ///<summary>Sets the avialable boolean based on if any rotations are valid</summary>
+        ///<summary>Sets the available boolean based on if any rotations are valid</summary>
         public bool SetAvailability() {
             //Default available to false
             available = false;

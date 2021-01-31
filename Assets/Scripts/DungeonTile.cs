@@ -48,10 +48,10 @@ public class DungeonTile : MonoBehaviour {
     public void SetDirectionAvailability() {
         //Check and set the direction availability for each direction
         localDirections = new List<bool>() {
-            CheckRayCastDirection(new Vector3(0, 1,  4.9f)),
-            CheckRayCastDirection(new Vector3( 4.9f, 1, 0)),
-            CheckRayCastDirection(new Vector3(0, 1, -4.9f)),
-            CheckRayCastDirection(new Vector3(-4.9f, 1, 0))
+            CheckRayCastDirection(new Vector3( 0   , 1,  4.9f)),
+            CheckRayCastDirection(new Vector3( 4.9f, 1,     0)),
+            CheckRayCastDirection(new Vector3( 0   , 1, -4.9f)),
+            CheckRayCastDirection(new Vector3(-4.9f, 1,     0))
         };
 
         UpdateRotationConnections();
@@ -61,7 +61,7 @@ public class DungeonTile : MonoBehaviour {
 
     ///<summary>Sets the boolean according to originOffset and what the raycast hits</summary>
     ///<param name="originOffset">The position offset that the raycast should originate from. Also used to determine which bool to change</param>
-    ///<param name="localSpace">Whether the cooridnates will be in local space, or position + global space</param>
+    ///<param name="localSpace">Whether the coordinates will be in local space, or position + global space</param>
     private bool CheckRayCastDirection(Vector3 originOffset, bool localSpace = true) {
         RaycastHit hit;
         if((localSpace && Physics.Raycast(transform.TransformPoint(originOffset), -transform.up, out hit, 5)) || (!localSpace && Physics.Raycast(transform.position + originOffset, -transform.up, out hit, 5))) {
